@@ -7,8 +7,9 @@ Iluminación: incluimos tiras led de dos colores, azul y rojo. Esto se debe a qu
 
 Todo esto se trabaja sobre una ESP32S3 y además para facilitar su uso, mostramos los controles por una pantalla que hace de interfaz gráfica. También, disponemos de una dashboard web, en el que tendríamos todos los parámetros.      
 
-<img width="1134" height="2016" alt="WhatsApp Image 2026-09-19 at 11 07 26" src="https://github.com/user-attachments/assets/0f7c2bd4-eee6-4e1a-8036-ce8ce5ff3716" />
+<img width="1134" height="2016" alt="Incubadora" src="https://github.com/user-attachments/assets/0f7c2bd4-eee6-4e1a-8036-ce8ce5ff3716" />
 
-<img width="1296" height="848" alt="WhatsApp Image 2026-09-19 at 11 08 10" src="https://github.com/user-attachments/assets/fcd63ef7-2cc7-4d6d-92ac-8834e09928bd" />
+<img width="1080" height="763" alt="Esquemática" src="https://github.com/user-attachments/assets/90f72807-8fb7-4a6e-abd5-40d9ba820fe3" />
+
 
 
