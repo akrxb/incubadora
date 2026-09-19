@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Reto BioSense</title>
+<link rel="icon" type="image/x-icon" href="/fav.ico">
+<script src="/chart.umd.min.js"></script>
+
+<style>
+  :root {
+    --bg-0: #0b1020;
+    --bg-1: #121933;
+    --bg-2: #1a2348;
+    --border: #2a335a;
+    --text-1: #e6ecff;
+    --text-2: #9aa6c8;
+    --accent:    #7dd3fc;
+    --accent-2:  #38bdf8;
+    --temp:   #ff8a65;
+    --hum:    #4dd0e1;
+    --co2:    #a78bfa;
+    --red:    #ef4444;
+    --blue:   #3b82f6;
+    --green:  #22c55e;
+    --gray:   #475569;
+    --weight: #fbbf24;
+    --shadow: 0 6px 22px rgba(0,0,0,0.35);
+    --radius: 14px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                 "Helvetica Neue", Arial, sans-serif;
+    background:
+      radial-gradient(1200px 600px at 10% -10%, #1b2550 0%, transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, #142042 0%, transparent 55%),
+      var(--bg-0);
+    color: var(--text-1);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 28px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(11, 16, 32, 0.7);
+    backdrop-filter: blur(8px);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  header .brand { display: flex; align-items: center; gap: 14px; }
+  header .brand .logo { width: 42px; height: 42px; color: var(--accent); flex-shrink: 0; }
+  header h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--gray); }
+  .dot.online { background: var(--green); animation: pulse 1.6s infinite; }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55); }
+    70%  { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+  }
+
+  main { max-width: 1200px; margin: 0 auto; padding: 28px; }
+
+  /* ── GRID: 2 columnas ── */
+  .grid {
+    display: grid;
+    gap: 20px;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .col-1  { grid-column: span 1; }
+  .col-2  { grid-column: span 2; }
+
+  @media (max-width: 780px) {
+    .grid { grid-template-columns: 1fr; }
+    .col-1, .col-2 { grid-column: span 1; }
+  }
+
+  @media (max-width: 560px) {
+    main { padding: 18px; }
+    header { padding: 14px 18px; }
+    header h1 { font-size: 18px; }
+    header .brand .logo { width: 34px; height: 34px; }
+    .sensor-mini .value { font-size: 22px; }
+  }
+
+  .card {
+    background: linear-gradient(180deg, var(--bg-1), var(--bg-2));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+  }
+  .card h2 {
+    margin: 0 0 6px 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-2);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h2 svg { width: 14px; height: 14px; }
+
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+  .pair.single { grid-template-columns: 1fr; }
+
+  .sensor-mini {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .sensor-mini .label { font-size: 12px; color: var(--text-2); margin-bottom: 4px; letter-spacing: 0.4px; }
+  .sensor-mini .value { font-size: 26px; font-weight: 700; line-height: 1; letter-spacing: -0.5px; }
+  .sensor-mini .unit  { font-size: 14px; color: var(--text-2); margin-left: 2px; font-weight: 500; }
+
+  .icon-bg {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .icon-bg svg { width: 22px; height: 22px; }
+  .icon-bg.temp   { background: rgba(255, 138, 101, 0.15); color: var(--temp); }
+  .icon-bg.hum    { background: rgba(77, 208, 225, 0.15);  color: var(--hum);  }
+  .icon-bg.co2    { background: rgba(167, 139, 250, 0.15); color: var(--co2);  }
+  .icon-bg.weight { background: rgba(251, 191, 36, 0.15);  color: var(--weight); }
+
+  /* ── LED card ── */
+  .led-card { display: flex; flex-direction: column; gap: 10px; }
+  .led-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 4px; }
+  .led-info { display: flex; align-items: center; gap: 12px; }
+  .led-info .icon-bg { width: 44px; height: 44px; border-radius: 12px; }
+  .led-info .icon-bg svg { width: 24px; height: 24px; }
+  .led-info.red  .icon-bg { background: rgba(239, 68, 68, 0.15); color: var(--red);  }
+  .led-info.blue .icon-bg { background: rgba(59, 130, 246, 0.15); color: var(--blue); }
+  .led-info .label { font-size: 15px; font-weight: 500; }
+  .led-info .sub   { font-size: 12px; color: var(--text-2); }
+
+  .led-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+
+  .badge {
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    display: inline-flex; align-items: center; gap: 6px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.03);
+    color: var(--text-2);
+    transition: all 0.25s ease;
+  }
+  .badge svg { width: 12px; height: 12px; }
+  .badge.on.red  { color: #fff; background: var(--red);  border-color: var(--red);  box-shadow: 0 0 18px rgba(239,68,68,0.45); }
+  .badge.on.blue { color: #fff; background: var(--blue); border-color: var(--blue); box-shadow: 0 0 18px rgba(59,130,246,0.45); }
+
+  .intensity-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11px;
+    color: var(--text-2);
+    min-width: 110px;
+    justify-content: flex-end;
+  }
+  .intensity-bar { width: 70px; height: 5px; border-radius: 3px; background: var(--border); overflow: hidden; }
+  .intensity-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; background: var(--gray); }
+  .intensity-fill.red  { background: var(--red);  }
+  .intensity-fill.blue { background: var(--blue); }
+
+  .chart-wrap { position: relative; height: 260px; margin-top: 8px; }
+
+  footer {
+    text-align: center;
+    color: var(--text-2);
+    font-size: 12px;
+    padding: 18px;
+    border-top: 1px solid var(--border);
+    margin-top: 20px;
+  }
+  footer .uptime { color: var(--text-1); font-weight: 500; }
+
+  .fallback {
+    display: none;
+    margin: 20px 28px 0;
+    padding: 12px 16px;
+    background: rgba(239, 68, 68, 0.10);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    border-radius: 8px;
+    color: #fecaca;
+    font-size: 13px;
+  }
+  .fallback.show { display: block; }
+
+  .sp-tag {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--temp);
+    background: rgba(255,138,101,0.12);
+    border: 1px solid rgba(255,138,101,0.3);
+    border-radius: 6px;
+    padding: 2px 8px;
+  }
+
+  .section-sep { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 64 64" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M13 14 h38 a3 3 0 0 1 3 3 v12 h-44 v-12 a3 3 0 0 1 3 -3 z"/>
+      <rect x="14" y="17" width="36" height="10" rx="1" fill="#0b1020"/>
+      <circle cx="20" cy="22" r="2.4"/>
+      <path d="M22.5 23 q3 -0.5 6 1 q3 1.5 6 1.5 v2.5 q-3 0 -6 -1 q-3 -1 -6 -0.5 z"/>
+      <rect x="10" y="29" width="44" height="6" rx="1.2"/>
+      <rect x="22" y="35" width="20" height="16" rx="1"/>
+      <rect x="27" y="41" width="10" height="3.5" rx="0.6" fill="#0b1020"/>
+      <rect x="14" y="50.5" width="36" height="2" rx="1"/>
+      <circle cx="19" cy="55" r="3"/>
+      <circle cx="45" cy="55" r="3"/>
+    </svg>
+    <h1>Reto BioSense</h1>
+  </div>
+  <div class="status">
+    <span class="dot" id="connDot"></span>
+    <span id="connText">Conectando…</span>
+  </div>
+</header>
+
+<div id="fallbackMsg" class="fallback">
+  ⚠ No se ha podido cargar la librería de gráficos. Comprueba que <code>chart.umd.min.js</code> está en la partición LittleFS.
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-thermo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/>
+    </symbol>
+    <symbol id="i-drop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2.69 5.64 9.05a8 8 0 1 0 12.72 0z"/>
+    </symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 18h6"/><path d="M10 22h4"/>
+      <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/>
+    </symbol>
+    <symbol id="i-power" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/>
+    </symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/>
+    </symbol>
+    <symbol id="i-co2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <circle cx="4"  cy="12" r="2"/>
+      <circle cx="20" cy="12" r="2"/>
+      <line x1="6"  y1="12" x2="9"  y2="12"/>
+      <line x1="15" y1="12" x2="18" y2="12"/>
+    </symbol>
+    <symbol id="i-weight" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 20h12"/>
+      <path d="M12 4a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
+      <path d="M5 20 3 8h18l-2 12"/>
+      <path d="M9 8a3 3 0 0 0 6 0"/>
+    </symbol>
+  </defs>
+</svg>
+
+<main>
+  <div class="grid">
+
+    <!-- ── Fila 1, col izq: Temperatura ── -->
+    <section class="card col-1">
+      <h2>
+        <svg><use href="#i-thermo"/></svg> Temperatura
+        <span class="sp-tag">SP: <span id="spValue">--</span> °C</span>
+      </h2>
+      <div class="pair">
+        <div class="sensor-mini">
+          <div>
+            <div class="label">Sensor 1</div>
+            <div><span class="value" id="t1Value">--</span><span class="unit">°C</span></div>
+          </div>
+          <div class="icon-bg temp"><svg><use href="#i-thermo"/></svg></div>
+        </div>
+        <div class="sensor-mini">
+          <div>
+            <div class="label">Sensor 2</div>
+            <div><span class="value" id="t2Value">--</span><span class="unit">°C</span></div>
+          </div>
+          <div class="icon-bg temp"><svg><use href="#i-thermo"/></svg></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Fila 1, col der: Humedad + CO2 ── -->
+    <section class="card col-1">
+      <h2><svg><use href="#i-drop"/></svg> Humedad</h2>
+      <div class="pair">
+        <div class="sensor-mini">
+          <div>
+            <div class="label">Sensor 1</div>
+            <div><span class="value" id="h1Value">--</span><span class="unit">%</span></div>
+          </div>
+          <div class="icon-bg hum"><svg><use href="#i-drop"/></svg></div>
+        </div>
+        <div class="sensor-mini">
+          <div>
+            <div class="label">Sensor 2</div>
+            <div><span class="value" id="h2Value">--</span><span class="unit">%</span></div>
+          </div>
+          <div class="icon-bg hum"><svg><use href="#i-drop"/></svg></div>
+        </div>
+      </div>
+
+      <div class="section-sep">
+        <h2><svg><use href="#i-co2"/></svg> CO₂</h2>
+        <div class="pair single">
+          <div class="sensor-mini">
+            <div>
+              <div class="label">Sensor 1</div>
+              <div><span class="value" id="co2Value">--</span><span class="unit">ppm</span></div>
+            </div>
+            <div class="icon-bg co2"><svg><use href="#i-co2"/></svg></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Fila 2, col izq: LEDs ── -->
+    <section class="card col-1 led-card">
+      <h2><svg><use href="#i-bulb"/></svg> Tiras LED</h2>
+
+      <div class="led-row">
+        <div class="led-info red">
+          <div class="icon-bg"><svg><use href="#i-bulb"/></svg></div>
+          <div>
+            <div class="label">Tira LED Roja</div>
+            <div class="sub">Canal 1</div>
+          </div>
+        </div>
+        <div class="led-right">
+          <span class="badge" id="ledRedBadge">
+            <svg><use href="#i-power"/></svg>
+            <span id="ledRedText">OFF</span>
+          </span>
+          <div class="intensity-bar-wrap">
+            <span id="ledRedInt">0%</span>
+            <div class="intensity-bar">
+              <div class="intensity-fill red" id="ledRedFill" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="led-row">
+        <div class="led-info blue">
+          <div class="icon-bg"><svg><use href="#i-bulb"/></svg></div>
+          <div>
+            <div class="label">Tira LED Azul</div>
+            <div class="sub">Canal 2</div>
+          </div>
+        </div>
+        <div class="led-right">
+          <span class="badge" id="ledBlueBadge">
+            <svg><use href="#i-power"/></svg>
+            <span id="ledBlueText">OFF</span>
+          </span>
+          <div class="intensity-bar-wrap">
+            <span id="ledBlueInt">0%</span>
+            <div class="intensity-bar">
+              <div class="intensity-fill blue" id="ledBlueFill" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Fila 2, col der: Peso ── -->
+    <section class="card col-1">
+      <h2><svg><use href="#i-weight"/></svg> Peso</h2>
+      <div class="pair single">
+        <div class="sensor-mini">
+          <div>
+            <div class="label">Báscula</div>
+            <div><span class="value" id="weightValue">--</span><span class="unit">kg</span></div>
+          </div>
+          <div class="icon-bg weight"><svg><use href="#i-weight"/></svg></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Fila 3, col izq: Gráfico Temperatura ── -->
+    <section class="card col-1">
+      <h2><svg><use href="#i-chart"/></svg> Temperatura + setpoint (60 s)</h2>
+      <div class="chart-wrap"><canvas id="chartTemp"></canvas></div>
+    </section>
+
+    <!-- ── Fila 3, col der: Gráfico Humedad ── -->
+    <section class="card col-1">
+      <h2><svg><use href="#i-chart"/></svg> Humedad · media (60 s)</h2>
+      <div class="chart-wrap"><canvas id="chartHum"></canvas></div>
+    </section>
+
+    <!-- ── Fila 4, ancho completo: Gráfico CO2 ── -->
+    <section class="card col-2">
+      <h2><svg><use href="#i-co2"/></svg> CO₂ (60 s)</h2>
+      <div class="chart-wrap" style="height:200px"><canvas id="chartCO2"></canvas></div>
+    </section>
+
+  </div>
+</main>
+
+<footer>
+  Reto BioSense &nbsp;·&nbsp; Uptime: <span class="uptime" id="uptime">--</span>
+</footer>
+
+<script>
+  const MAX_POINTS = 60;
+  let chartTemp = null, chartHum = null, chartCO2 = null;
+
+  if (typeof Chart === 'undefined') {
+    document.getElementById('fallbackMsg').classList.add('show');
+    console.warn('Chart.js no disponible.');
+  } else {
+    const baseOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 250 },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#9aa6c8', font: { size: 12 }, usePointStyle: true, pointStyle: 'circle' } },
+        tooltip: {
+          backgroundColor: '#0b1020', borderColor: '#2a335a', borderWidth: 1,
+          titleColor: '#e6ecff', bodyColor: '#e6ecff', padding: 10
+        }
+      }
+    };
+
+    chartTemp = new Chart(document.getElementById('chartTemp').getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: 'Temp (°C)', data: [],
+            borderColor: '#ff8a65', backgroundColor: 'rgba(255,138,101,0.15)',
+            borderWidth: 2.2, tension: 0.35, pointRadius: 0, fill: true,
+          },
+          {
+            label: 'Setpoint (°C)', data: [],
+            borderColor: '#facc15', backgroundColor: 'transparent',
+            borderWidth: 1.8, borderDash: [5, 4], tension: 0, pointRadius: 0, fill: false,
+          }
+        ]
+      },
+      options: { ...baseOptions, scales: {
+        x: { ticks: { color: '#9aa6c8', maxTicksLimit: 8 }, grid: { color: 'rgba(154,166,200,0.08)' } },
+        y: { min: 15, max: 45,
+             ticks: { color: '#ff8a65' }, grid: { color: 'rgba(154,166,200,0.08)' },
+             title: { display: true, text: '°C', color: '#ff8a65' } }
+      }}
+    });
+
+    chartHum = new Chart(document.getElementById('chartHum').getContext('2d'), {
+      type: 'line',
+      data: { labels: [], datasets: [{
+        label: 'Media (%)', data: [],
+        borderColor: '#4dd0e1', backgroundColor: 'rgba(77,208,225,0.15)',
+        borderWidth: 2.2, tension: 0.35, pointRadius: 0, fill: true,
+      }]},
+      options: { ...baseOptions, scales: {
+        x: { ticks: { color: '#9aa6c8', maxTicksLimit: 8 }, grid: { color: 'rgba(154,166,200,0.08)' } },
+        y: { min: 0, max: 100,
+             ticks: { color: '#4dd0e1' }, grid: { color: 'rgba(154,166,200,0.08)' },
+             title: { display: true, text: '%', color: '#4dd0e1' } }
+      }}
+    });
+
+    chartCO2 = new Chart(document.getElementById('chartCO2').getContext('2d'), {
+      type: 'line',
+      data: { labels: [], datasets: [{
+        label: 'CO₂ (ppm)', data: [],
+        borderColor: '#a78bfa', backgroundColor: 'rgba(167,139,250,0.15)',
+        borderWidth: 2.2, tension: 0.35, pointRadius: 0, fill: true,
+      }]},
+      options: { ...baseOptions, scales: {
+        x: { ticks: { color: '#9aa6c8', maxTicksLimit: 10 }, grid: { color: 'rgba(154,166,200,0.08)' } },
+        y: { min: 300, max: 2000,
+             ticks: { color: '#a78bfa' }, grid: { color: 'rgba(154,166,200,0.08)' },
+             title: { display: true, text: 'ppm', color: '#a78bfa' } }
+      }}
+    });
+  }
+
+  // ── Referencias DOM ──────────────────────────────────────────
+  const dot        = document.getElementById('connDot');
+  const txt        = document.getElementById('connText');
+  const t1El       = document.getElementById('t1Value');
+  const t2El       = document.getElementById('t2Value');
+  const h1El       = document.getElementById('h1Value');
+  const h2El       = document.getElementById('h2Value');
+  const co2El      = document.getElementById('co2Value');
+  const spEl       = document.getElementById('spValue');
+  const weightEl   = document.getElementById('weightValue');
+  const upEl       = document.getElementById('uptime');
+  const redBadge   = document.getElementById('ledRedBadge');
+  const blueBadge  = document.getElementById('ledBlueBadge');
+  const redText    = document.getElementById('ledRedText');
+  const blueText   = document.getElementById('ledBlueText');
+  const redIntEl   = document.getElementById('ledRedInt');
+  const blueIntEl  = document.getElementById('ledBlueInt');
+  const redFillEl  = document.getElementById('ledRedFill');
+  const blueFillEl = document.getElementById('ledBlueFill');
+
+  // ── Helpers ──────────────────────────────────────────────────
+  function fmtUptime(s) {
+    const h   = Math.floor(s / 3600);
+    const m   = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    return `${h}h ${String(m).padStart(2,'0')}m ${String(sec).padStart(2,'0')}s`;
+  }
+
+  function pushPoint(chart, label, ...values) {
+    if (!chart) return;
+    chart.data.labels.push(label);
+    values.forEach((v, i) => {
+      chart.data.datasets[i].data.push(v);
+      if (chart.data.datasets[i].data.length > MAX_POINTS)
+        chart.data.datasets[i].data.shift();
+    });
+    if (chart.data.labels.length > MAX_POINTS) chart.data.labels.shift();
+    chart.update('none');
+  }
+
+  // ── Actualizar UI con datos REALES del WebSocket ─────────────
+  // El ESP32 envía este JSON cada segundo:
+  // { temp1, temp2, hum1, hum2, co2, setpoint, weight,
+  //   ledRed, ledBlue, ledInt, uptime }
+  function updateUI(d) {
+    // Temperaturas
+    t1El.textContent = (+d.temp1).toFixed(1);
+    t2El.textContent = (+d.temp2).toFixed(1);
+    // Setpoint (viene directo de tempConsigna en el ESP32)
+    spEl.textContent = (+d.setpoint).toFixed(1);
+
+    // Humedad
+    h1El.textContent = (+d.hum1).toFixed(1);
+    h2El.textContent = (+d.hum2).toFixed(1);
+
+    // CO₂
+    co2El.textContent = Math.round(d.co2);
+
+    // Peso
+    weightEl.textContent = (+d.weight).toFixed(3);
+
+    // Uptime
+    upEl.textContent = fmtUptime(d.uptime);
+
+    // LEDs — estado y brillo reales (brilloLed del ESP32)
+    const ledRed  = !!d.ledRed;
+    const ledBlue = !!d.ledBlue;
+    const ledInt  = d.ledInt !== undefined ? +d.ledInt : 0;
+
+    redText.textContent  = ledRed  ? 'ON' : 'OFF';
+    blueText.textContent = ledBlue ? 'ON' : 'OFF';
+    redBadge.className   = 'badge' + (ledRed  ? ' on red'  : '');
+    blueBadge.className  = 'badge' + (ledBlue ? ' on blue' : '');
+
+    const intR = ledRed  ? ledInt : 0;
+    const intB = ledBlue ? ledInt : 0;
+    redIntEl.textContent   = intR + '%';
+    blueIntEl.textContent  = intB + '%';
+    redFillEl.style.width  = intR + '%';
+    blueFillEl.style.width = intB + '%';
+
+    // Gráficas
+    const tAvg = ((+d.temp1) + (+d.temp2)) / 2;
+    const hAvg = ((+d.hum1)  + (+d.hum2))  / 2;
+    const now  = new Date();
+    const label = `${String(now.getHours()).padStart(2,'0')}:` +
+                  `${String(now.getMinutes()).padStart(2,'0')}:` +
+                  `${String(now.getSeconds()).padStart(2,'0')}`;
+
+    pushPoint(chartTemp, label, +tAvg.toFixed(2), +d.setpoint);
+    pushPoint(chartHum,  label, +hAvg.toFixed(2));
+    pushPoint(chartCO2,  label, Math.round(d.co2));
+  }
+
+  // ── WebSocket — reconexión automática ────────────────────────
+  let ws;
+  function connect() {
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    ws = new WebSocket(`${proto}://${location.host}/ws`);
+    ws.onopen    = () => { dot.classList.add('online'); txt.textContent = 'Conectado'; };
+    ws.onclose   = () => { dot.classList.remove('online'); txt.textContent = 'Desconectado · reintentando…'; setTimeout(connect, 1500); };
+    ws.onerror   = (e) => { console.error('WS error', e); };
+    ws.onmessage = (ev) => { try { updateUI(JSON.parse(ev.data)); } catch(e) { console.error(e); } };
+  }
+
+  connect();
+</script>
+</body>
+</html>
